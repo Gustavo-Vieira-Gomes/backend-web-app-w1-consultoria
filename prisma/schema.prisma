@@ -17,26 +17,26 @@ datasource db {
 ///////////////////////////////*************************////////////////////////////////////////////////////////
 
 model User {
-  id                String              @id @default(uuid())
-  name              String
-  email             String              @unique
-  document          String?             @unique
-  documentType      DocumentType        @default(cpf)
-  password_hash     String
-  birth_date        DateTime?
-  phone             String?
-  userType          UserType            @default(client)
-  documents         Document[]
-  liabilities       Liability[]
-  assets            Asset[]
-  inflows           Inflow[]
-  recurringInflows  RecurringInflows[]
-  outflows          Outflow[]
-  recurringOutflows RecurringOutflows[]
-  addressId         String?
-  address           Address?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  id            String             @id @default(uuid())
+  name          String
+  email         String             @unique
+  document      String?            @unique
+  documentType  DocumentType       @default(cpf)
+  password_hash String
+  birth_date    DateTime?
+  phone         String?
+  occupation    String?
+  nationality   String?
+  maritalStatus MaritalStatusEnum?
+  photoUrl      String?
+  userType      UserType           @default(client)
+  documents     Document[]
+  liabilities   Liability[]
+  assets        Asset[]
+  addressId     String?
+  address       Address?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 }
 
 model Heir {
@@ -44,10 +44,12 @@ model Heir {
   name           String
   relation       HeirRelation
   phone          String?
-  document       String
-  documentType   DocumentType @default(cpf)
   percentage     Decimal
+  document       String
+  photoUrl       String?
+  documentType   DocumentType @default(cpf)
   address        Address?
+  documents      Document[]
   is_forced_heir Boolean      @default(true)
   softDeleted    Boolean      @default(false)
   createdAt      DateTime     @default(now())
@@ -56,41 +58,54 @@ model Heir {
 }
 
 model Document {
-  id               String           @id @default(uuid())
-  userId           String
-  user             User             @relation(references: [id], fields: [userId])
-  documentCategory DocumentCategory
-  documentPhotoUrl String
+  id      String       @id @default(uuid())
+  fileUrl String
+  type    DocumentType
+
+  userId String?
+  user   User?   @relation(references: [id], fields: [userId])
+
+  heir   Heir?   @relation(references: [id], fields: [heirId])
+  heirId String?
+
+  assetId String?
+  asset   Asset?  @relation(references: [id], fields: [assetId])
 }
 
 model Liability {
   id           String        @id @default(uuid())
-  userId       String
-  user         User          @relation(fields: [userId], references: [id])
-  type         LiabilityType
-  description  String
+  name         String
   initialValue Decimal
   currentValue Decimal
+  type         LiabilityType
+  lender       String?
+  description  String?
   interestRate Decimal?
   dueDate      DateTime?
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  softDeleted  Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
 }
 
 model Asset {
-  id            String    @id @default(uuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  type          AssetType
-  description   String
-  value         Decimal
-  monthlyIncome Decimal?
-  location      Address?
-  isProtected   Boolean   @default(false) // Holding já protege o patrimônio?
-  softDeleted   Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id             String         @id @default(uuid())
+  description    String
+  initialValue   Decimal
+  currentValue   Decimal
+  type           AssetType
+  liquidityLevel LiquidityLevel
+  location       Address?
+  documents      Document[]
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  isProtected    Boolean        @default(false) // Holding já protege o patrimônio?
+  softDeleted    Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
 }
 
 model Address {
@@ -103,89 +118,13 @@ model Address {
   state      String
   zipCode    String
   country    String  @default("BR")
-  userId     String? @unique
-  user       User?   @relation(fields: [userId], references: [id])
-  heirId     String? @unique
-  heir       Heir?   @relation(references: [id], fields: [heirId])
-  assetId    String? @unique
-  asset      Asset?  @relation(references: [id], fields: [assetId])
-}
 
-model Inflow {
-  id            String             @id @default(uuid())
-  userId        String
-  user          User               @relation(fields: [userId], references: [id])
-  description   String
-  inflowType    InflowType
-  value         Decimal
-  date          DateTime
-  isPredicted   Boolean            @default(false)
-  recurringId   String?
-  recurring     RecurringInflows?  @relation(fields: [recurringId], references: [id])
-  entityRelated EntityRelatedType?
-  entityId      String?
-  softDeleted   Boolean            @default(false)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  deletedAt     DateTime?
-}
-
-model RecurringInflows {
-  id            String             @id @default(uuid())
-  userId        String
-  user          User               @relation(fields: [userId], references: [id])
-  description   String
-  inflowType    InflowType
-  value         Decimal
-  frequency     FrequencyEnum
-  startDate     DateTime
-  endDate       DateTime?
-  inflows       Inflow[]
-  entityRelated EntityRelatedType?
-  entityId      String?
-  softDeleted   Boolean            @default(false)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  deletedAt     DateTime?
-}
-
-model Outflow {
-  id                  String             @id @default(uuid())
-  userId              String
-  user                User               @relation(fields: [userId], references: [id])
-  description         String
-  outflowType         OutflowType
-  value               Decimal
-  date                DateTime
-  isPredicted         Boolean            @default(false)
-  recurringId         String?
-  recurring           RecurringOutflows? @relation(fields: [recurringOutflowsId], references: [id])
-  entityRelated       EntityRelatedType?
-  entityId            String?
-  softDeleted         Boolean            @default(false)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  deletedAt           DateTime?
-  recurringOutflowsId String?
-}
-
-model RecurringOutflows {
-  id            String             @id @default(uuid())
-  userId        String
-  user          User               @relation(fields: [userId], references: [id])
-  description   String
-  outflowType   OutflowType
-  value         Decimal
-  frequency     FrequencyEnum
-  startDate     DateTime
-  endDate       DateTime?
-  outflows      Outflow[]
-  entityRelated EntityRelatedType?
-  entityId      String?
-  softDeleted   Boolean            @default(false)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  deletedAt     DateTime?
+  userId  String? @unique
+  user    User?   @relation(fields: [userId], references: [id])
+  heirId  String? @unique
+  heir    Heir?   @relation(references: [id], fields: [heirId])
+  assetId String? @unique
+  asset   Asset?  @relation(references: [id], fields: [assetId])
 }
 
 /////////////////////////////****************************/////////////////////////////////////////
@@ -201,9 +140,6 @@ enum DocumentType {
   rg
   passport
   cnh
-}
-
-enum DocumentCategory {
   propertyDeed
   vehicleRegistrationDocument
   testament
@@ -243,89 +179,16 @@ enum AssetType {
   other
 }
 
-enum OwnerType {
-  user
-  asset
+enum MaritalStatusEnum {
+  single
+  married
+  divorced
+  widowed
+  separated
 }
 
-enum InflowType {
-  salary
-  bonus
-  commission
-  freelanceIncome
-  rentalIncome
-  dividends
-  interestIncome
-  royalties
-  profitDistribution
-  stockSale
-  propertySale
-  vehicleSale
-  fundRedemption
-  capitalGain
-  inheritance
-  insurancePayout
-  reimbursement
-  donationReceived
-  taxRefund
-  accountTransfer
-  other
-}
-
-enum EntityRelatedType {
-  asset
-  liabilty
-}
-
-enum FrequencyEnum {
-  daily
-  weekly
-  biweekly
-  monthly
-  bimonthly
-  quarterly
-  semiannual
-  annual
-}
-
-enum OutflowType {
-  rent
-  condominiumFee
-  propertyTax
-  homeInsurance
-  homeMaintenance
-  carLoanPayment
-  fuel
-  vehicleMaintenance
-  carInsurance
-  vehicleTax
-  publicTransportation
-  groceries
-  diningOut
-  foodDelivery
-  electricity
-  waterAndSewage
-  internet
-  phone
-  gas
-  cableTv
-  loanPayment
-  creditCardPayment
-  interestOrPenalties
-  installmentPayment
-  taxPayment
-  healthInsurance
-  medications
-  medicalConsultation
-  medicalExams
-  tuition
-  coursesAndWorkshops
-  schoolSupplies
-  clothing
-  entertainment
-  gymMembership
-  gifts
-  subscriptions
-  donations
-  other
+enum LiquidityLevel {
+  high
+  medium
+  low
 }
