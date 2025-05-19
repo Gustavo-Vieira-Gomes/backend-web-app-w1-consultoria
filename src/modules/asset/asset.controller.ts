@@ -16,14 +16,15 @@ export class AssetController {
 
     @Put(':id')
     async updateAsset(
+        @Param('id') id: string,
         @Body() body: updateAssetDto,
         file?: Express.Multer.File) {
-        return this.assetService.updateAsset(body, file)
+        return this.assetService.updateAsset(id, body, file)
     }
 
     @Put(':id/address')
-    async updateAssetAddress(@Req() req, @Body() body: AddressDto) {
-        return this.assetService.updateAssetAddress(req.user.id, body)
+    async updateAssetAddress(@Param('id') id: string, @Body() body: AddressDto) {
+        return this.assetService.updateAssetAddress(id, body)
     }
 
     @Get(':id')

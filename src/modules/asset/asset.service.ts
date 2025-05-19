@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { ClientService } from 'src/client/client.service';
 import { AddressDto, AssetDto, updateAssetDto } from './dto/asset.dto';
 import { paginated, skipOption } from 'src/utils/pagination/pagination';
@@ -58,7 +58,7 @@ export class AssetService {
     }
 
 
-    async updateAsset(body: updateAssetDto, file?: Express.Multer.File) {
+    async updateAsset(id:string, body: updateAssetDto, file?: Express.Multer.File) {
         let s3Key: null | string = null
 
         if (file && body.documentType) {
@@ -73,7 +73,7 @@ export class AssetService {
 
         return this.clientService.asset.update({
             where: {
-                id: body.id
+                id: id
             },
             data: {
                 description: body.description,
@@ -100,11 +100,13 @@ export class AssetService {
         })
     }
 
-    async updateAssetAddress (id: string, body: AddressDto) {
+    async updateAssetAddress (id: string,body: AddressDto) {
         const addressExists = await this.clientService.address.findFirst({
             where: {
-                user: {
-                    id: id
+                assets: {
+                    some: {
+                        id
+                    }
                 }
             }
         })
@@ -119,7 +121,7 @@ export class AssetService {
                     state: body.state,
                     zipCode: body.zipCode,
                     country: body.country,
-                    user: {
+                    assets: {
                         connect: {
                             id
                         }
@@ -184,7 +186,15 @@ export class AssetService {
         return paginated(assets, assetsCount, page, limit)
     }
     async softDeleteAsset(id: string) {
-        return this.clientService.asset.update({
+        const assetExists = await this.clientService.asset.findUnique({
+            where: {
+                id
+            }
+        })
+
+        if (!assetExists) throw new BadRequestException("Asset not found");
+
+        const asset = this.clientService.asset.update({
             where: {
                 id
             },
@@ -193,5 +203,9 @@ export class AssetService {
                 deletedAt: new Date()
             }
         })
+
+        if (!asset) throw new BadRequestException("Failed to delete asset");
+
+        return HttpStatus.NO_CONTENT
     }
 }

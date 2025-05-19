@@ -59,8 +59,6 @@ export class AddressDto {
 }
 
 export class updateAssetDto {
-    @IsUUID()
-    id: string;
 
     @IsString()
     description: string;
@@ -84,4 +82,9 @@ export class updateAssetDto {
 
     @IsBoolean()
     isProtected: boolean;
+}
+
+export class UpdateAddressDto extends AddressDto {
+    @IsUUID()
+    assetId: string;
 }
