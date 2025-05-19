@@ -30,13 +30,16 @@ model User {
   maritalStatus MaritalStatusEnum?
   photoUrl      String?
   userType      UserType           @default(client)
-  documents     Document[]
-  liabilities   Liability[]
-  assets        Asset[]
-  addressId     String?
-  address       Address?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+
+  userHolding        Holding?    @relation("Owner")
+  consultingHoldings Holding[]   @relation("Consultant")
+  documents          Document[]
+  liabilities        Liability[]
+  assets             Asset[]
+  addressId          String?
+  address            Address?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 }
 
 model Heir {
@@ -48,7 +51,11 @@ model Heir {
   document       String
   photoUrl       String?
   documentType   DocumentType @default(cpf)
-  address        Address?
+  
+  holdingId      String?
+  holding        Holding?     @relation(fields: [holdingId], references: [id])
+  addressId      String?
+  address        Address?     @relation(fields: [addressId], references: [id])
   documents      Document[]
   is_forced_heir Boolean      @default(true)
   softDeleted    Boolean      @default(false)
@@ -97,7 +104,8 @@ model Asset {
   currentValue   Decimal
   type           AssetType
   liquidityLevel LiquidityLevel
-  location       Address?
+  addressId      String
+  address        Address        @relation(references: [id], fields: [addressId])
   documents      Document[]
   userId         String
   user           User           @relation(fields: [userId], references: [id])
@@ -119,12 +127,30 @@ model Address {
   zipCode    String
   country    String  @default("BR")
 
-  userId  String? @unique
-  user    User?   @relation(fields: [userId], references: [id])
-  heirId  String? @unique
-  heir    Heir?   @relation(references: [id], fields: [heirId])
-  assetId String? @unique
-  asset   Asset?  @relation(references: [id], fields: [assetId])
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+  heirs  Heir[]
+  assets Asset[]
+
+  @@unique([zipCode, number])
+}
+
+model Holding {
+  id                String   @id @default(uuid())
+  name              String
+  cnpj              String
+  legalEntityType   String
+  taxRegime         String
+  incorporationDate String
+  shareCapital      String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  userId       String @unique
+  user         User   @relation("Owner", references: [id], fields: [userId])
+  consultantId String
+  consultant   User   @relation("Consultant", references: [id], fields: [consultantId])
+  heirs       Heir[]
 }
 
 /////////////////////////////****************************/////////////////////////////////////////
@@ -142,7 +168,7 @@ enum DocumentType {
   cnh
   propertyDeed
   vehicleRegistrationDocument
-  testament
+  marriageComprovation
 }
 
 enum HeirRelation {
