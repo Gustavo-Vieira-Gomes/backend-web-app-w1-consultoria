@@ -1,18 +1,17 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ClientService } from 'src/client/client.service';
 import { AddressDto, AssetDto, updateAssetDto } from './dto/asset.dto';
 import { paginated, skipOption } from 'src/utils/pagination/pagination';
+import { S3Service } from 'src/services/s3/s3.service';
 
 @Injectable()
 export class AssetService {
-    constructor(private readonly clientService: ClientService) { }
+    constructor(private readonly clientService: ClientService, private readonly s3Service: S3Service) { }
 
     async createAsset(user: string, body: AssetDto, file?: Express.Multer.File) {
-        let s3Url: null | string = null
+        let s3Key: null | string = null
         if (file && body.documentType) {
-            // Upload to S3 
-            // TODO CriarService de conexão com o s3 da aws
-            s3Url = "s3Url"
+            s3Key = await this.s3Service.uploadFile(file, "assets")
         }
 
         return this.clientService.asset.create({
@@ -45,10 +44,10 @@ export class AssetService {
                     }
                 }),
 
-                ...((s3Url) && {
+                ...((s3Key) && {
                     documents: {
                         create: [{
-                            fileUrl: s3Url, // s3 url
+                            fileKey: s3Key, // s3 url
                             type: body.documentType,
                         }]
                     }
@@ -60,11 +59,16 @@ export class AssetService {
 
 
     async updateAsset(body: updateAssetDto, file?: Express.Multer.File) {
-        let s3Url: null | string = null
+        let s3Key: null | string = null
 
         if (file && body.documentType) {
-            // Upload to S3
-            s3Url = "s3Url"
+            const document = await this.clientService.document.findFirst({
+                where: {
+                    id: body.fileId
+                }
+            })
+            await this.s3Service.deleteFile(document.fileKey);
+            s3Key = await this.s3Service.uploadFile(file, "assets")
         }
 
         return this.clientService.asset.update({
@@ -79,14 +83,14 @@ export class AssetService {
                 liquidityLevel: body.liquidityLevel,
                 isProtected: body.isProtected,
 
-                ...((s3Url) && {
+                ...((s3Key) && {
                     documents: {
                         update: [{
                             where: {
                                 id: body.fileId
                             },
                             data: {
-                                fileUrl: s3Url, // s3 url
+                                fileKey: s3Key, // s3 url
                                 type: body.documentType
                             }
                         }]
