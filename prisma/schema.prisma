@@ -31,36 +31,37 @@ model User {
   photoUrl      String?
   userType      UserType           @default(client)
 
-  userHolding        Holding?    @relation("Owner")
-  consultingHoldings Holding[]   @relation("Consultant")
+  userHolding        Holding?          @relation("Owner")
+  consultingHoldings Holding[]         @relation("Consultant")
   documents          Document[]
   liabilities        Liability[]
   assets             Asset[]
+  snapshots          MonthlySnapshot[]
   addressId          String?
   address            Address?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 }
 
 model Heir {
-  id             String       @id @default(uuid())
-  name           String
-  relation       HeirRelation
-  phone          String?
-  percentage     Decimal
-  document       String
-  photoUrl       String?
-  documentType   DocumentType @default(cpf)
-  
+  id           String       @id @default(uuid())
+  name         String
+  relation     HeirRelation
+  phone        String?
+  percentage   Decimal
+  document     String
+  photoUrl     String?
+  documentType DocumentType @default(cpf)
+
   holdingId      String?
-  holding        Holding?     @relation(fields: [holdingId], references: [id])
+  holding        Holding?   @relation(fields: [holdingId], references: [id])
   addressId      String?
-  address        Address?     @relation(fields: [addressId], references: [id])
+  address        Address?   @relation(fields: [addressId], references: [id])
   documents      Document[]
-  is_forced_heir Boolean      @default(true)
-  softDeleted    Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  is_forced_heir Boolean    @default(true)
+  softDeleted    Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
   deletedAt      DateTime?
 }
 
@@ -150,7 +151,19 @@ model Holding {
   user         User   @relation("Owner", references: [id], fields: [userId])
   consultantId String
   consultant   User   @relation("Consultant", references: [id], fields: [consultantId])
-  heirs       Heir[]
+  heirs        Heir[]
+}
+
+model MonthlySnapshot {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  month       DateTime
+  totalAssets Decimal
+  netWorth    Decimal
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, month])
 }
 
 /////////////////////////////****************************/////////////////////////////////////////
