@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ClientService } from './client/client.service';
 import { AssetService } from './modules/asset/asset.service';
 import { LiabilityService } from './modules/liability/liability.service';
+import { SimulateTaxSavingsDto } from './shared/dtos/simulations.dto';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { skip } from 'rxjs';
 import { paginated, skipOption } from './utils/pagination/pagination';
@@ -118,5 +119,37 @@ export class AppService {
     const snapshots = await this.getHistoricalSnapshots(userId, page, limit);
 
     return snapshots.data.map((snapshot: { month: Date; totalAssets: number; netWorth: number; }) => ({ month: snapshot.month, totalAssets: snapshot.totalAssets, netWorth: snapshot.netWorth }))
+  }
+
+  async simulateTaxSavings(payload: SimulateTaxSavingsDto) {
+    // Taxas de impostos para Pessoa Física (Individual)
+    const taxOverIndividualVehicles = 0.04; // IPVA médio de 4% sobre o valor venal do veículo
+    const taxOverIndividualRealEstate = 0.275; // IRPF até 27,5% sobre aluguéis
+    const taxOverIndividualFixedIncome = 0.15; // IR de 15% para aplicações acima de 720 dias
+    const taxOverIndividualStocks = 0.15; // IR de 15% para operações comuns (swing trade)
+    const taxOverIndividualCrypto = 0.15; // IR de 15% sobre ganho de capital acima de R$35.000/mês
+    const taxOverIndividualAnnualRevenue = 0.275; // IRPF até 27,5% sobre a renda
+
+    // Taxas de impostos para Pessoa Jurídica (Holding)
+    const taxOverHoldingVehicles = 0.01; // IPVA de 1% para veículos de locadoras
+    const taxOverHoldingRealEstate = 0.1133; // Carga tributária efetiva aproximada no Lucro Presumido
+    const taxOverHoldingFixedIncome = 0.1133; // Carga tributária efetiva aproximada no Lucro Presumido
+    const taxOverHoldingStocks = 0.1133; // Carga tributária efetiva aproximada no Lucro Presumido
+    const taxOverHoldingCrypto = 0.1133; // Carga tributária efetiva aproximada no Lucro Presumido
+    const taxOverHoldingAnnualRevenue = 0.0593; // Carga tributária efetiva aproximada no Lucro Presumido
+
+    const taxSavings = {
+      vehicles: (taxOverIndividualVehicles - taxOverHoldingVehicles) * payload.vehiclesTotalValue,
+      realEstate: (taxOverIndividualRealEstate - taxOverHoldingRealEstate) * payload.realEstateTotalValue,
+      fixedIncome: (taxOverIndividualFixedIncome - taxOverHoldingFixedIncome) * payload.fixedIncomeTotalValue,
+      stocks: (taxOverIndividualStocks - taxOverHoldingStocks) * payload.stocksTotalValue,
+      crypto: (taxOverIndividualCrypto - taxOverHoldingCrypto) * payload.cryptoTotalValue,
+      annualRevenue: (taxOverIndividualAnnualRevenue - taxOverHoldingAnnualRevenue) * payload.annualRevenue
+    }
+    const totalTaxSavings = Object.values(taxSavings).reduce((acc, item) => acc + item, 0);
+    return {
+      taxSavings,
+      totalTaxSavings
+    }
   }
 }
