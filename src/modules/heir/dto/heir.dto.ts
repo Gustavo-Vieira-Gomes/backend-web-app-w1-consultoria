@@ -4,10 +4,13 @@ import {
   IsNumber,
   IsString,
   ValidateNested,
+  IsNotEmpty,
   IsOptional,
 } from "class-validator";
 import { Type } from "class-transformer";
-import { HeirRelation, DocumentType } from "prisma/generated/client";
+import { HeirRelation, DocumentType, Gender } from "prisma/generated/client";
+import { AddressDto } from "src/modules/asset/dto/asset.dto";
+import { PartialType } from "@nestjs/mapped-types";
 
 export class CreateHeirDto {
   @IsString()
@@ -18,33 +21,35 @@ export class CreateHeirDto {
   @IsNotEmpty()
   relation: HeirRelation;
 
+  @IsEnum(Gender)
+  gender: Gender;
+  
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
+  
   @IsNumber()
   @IsNotEmpty()
   percentage: number;
 
-  @IsBoolean()
-  @IsNotEmpty()
-  is_forced_heir: boolean;
-
-  @ValidateNested()
-  @Type(() => DocumentDto)
-  document: DocumentDto;
-}
-
-export class DocumentDto {
-  @IsString()
-  @IsNotEmpty()
-  phone: string;
-
   @IsString()
   @IsNotEmpty()
   document: string;
-
+  
   @IsEnum(DocumentType)
   @IsNotEmpty()
   documentType: DocumentType;
-
-  @IsString()
+  
+  @IsBoolean()
   @IsNotEmpty()
-  address: string;
+  isForcedHeir: boolean;
+  
+  @IsOptional()
+  @IsEnum(DocumentType)
+  uploadedDocumentType?: DocumentType;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AddressDto)
+  address?: AddressDto;
 }

@@ -27,7 +27,7 @@ export class AuthService {
     const account = await this.prisma.user.findUnique({
       where: { email: email },
     });
-    if (account && (await compare(password + account.salt, account.password_hash))) {
+    if (account && (await compare(password + account.salt, account.passwordHash))) {
       return userToReturnMapper(account);
     }
     return;

@@ -1,35 +1,51 @@
-import { Body, Controller, Post, Get, Patch, Param } from "@nestjs/common";
+import { Body, Controller, Post, Get, Patch, Param, Req, Put, UseInterceptors, UploadedFile } from "@nestjs/common";
 import { HeirService } from "./heir.service";
-import { CreateHeirDto, UpdateHeirDto } from "./dto/heir.dto";
+import { CreateHeirDto } from "./dto/heir.dto";
+import { FileInterceptor } from "@nestjs/platform-express";
 
 @Controller('heir')
 export class HeirController {
     constructor(private readonly heirService: HeirService) { }
 
     @Post()
-    create(@Body() payload: CreateHeirDto) {
-        return this.heirService.createHeir(payload);
+    @UseInterceptors(FileInterceptor('file'))
+    create(
+        @Req() req,
+        @Body() payload: CreateHeirDto,
+        @UploadedFile() file?: Express.Multer.File
+    ) {
+        return this.heirService.createHeir(req.user.id, payload, file);
     }
 
-    @Patch(':id')
+    @Put(':id')
+    @UseInterceptors(FileInterceptor('file'))
     async updateHeir(
         @Param('id') id: string,
-        @Body() payload: UpdateHeirDto
+        @Body() payload: CreateHeirDto,
+        @UploadedFile() file?: Express.Multer.File
     ) {
-        return this.heirService.updateHeir(id, payload);
+        return this.heirService.updateHeir(id, payload, file);
+    }
+
+    @Put(':id/address')
+    async updateHeirAddress(
+        @Param('id') id: string,
+        @Body() payload: any
+    ) {
+        return this.heirService.updateHeirAddress(id, payload);
     }
 
     @Get('user/:userId')
     async findAllByUserId(
         @Param('userId') userId: string
     ) {
-        return this.heirService.getAllHeirsByUser(userId);
+        return this.heirService.findAllByUserId(userId);
     }
 
     @Get(':id')
     async findOneById(
         @Param('id') id: string,
     ) {
-        return this.heirService.getHeirById(id);
+        return this.heirService.findOneById(id);
     }
 }

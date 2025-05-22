@@ -4,10 +4,21 @@ import {
   IsString,
   IsBoolean,
   IsNumber,
+  IsUrl,
+  IsArray,
 } from 'class-validator';
-import { MartialStatusEnum } from "prisma/generated/client";
+import { DocumentType } from 'prisma/generated/client';
+import { CreateAccountDto } from 'src/modules/auth/dto/auth.dto';
 
 export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  document?: string;
+
+  @IsOptional()
+  @IsString()
+  documentType?: string;
+
   @IsOptional()
   @IsEmail()
   email?: string;
@@ -16,13 +27,6 @@ export class UpdateUserDto {
   @IsString()
   phone?: string;
 
-  @IsOptional()
-  @IsString()
-  document?: string;
-
-  @IsOptional()
-  @IsString()
-  documentType?: string;
 
   @IsOptional()
   @IsString()
@@ -33,10 +37,22 @@ export class UpdateUserDto {
   occupation?: string;
 
   @IsOptional()
-  @IsEnum(MartialStatusEnum)
-  martialStatus?: MartialStatusEnum;
+  @IsUrl()
+  photoUrl?: string;
 
   @IsOptional()
-  @IsUrl()
-  photoUrl?: photoUrl
+  @IsArray()
+  uploadedDocumentsTypes: DocumentType[]
+}   
+
+export class CreateUserDto extends CreateAccountDto {
+  @IsString()
+  salt: string;
+}
+
+export class ChangeUserPwdDto {
+  @IsString()
+  oldPassword: string;
+  @IsString()
+  newPassword: string;
 }

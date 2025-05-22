@@ -6,17 +6,16 @@ import {
   IsUUID,
   IsNotEmpty
 } from 'class-validator';
-import { Type } from 'class-transformer/;'
-import { MartialStatusEnum } from "prisma/generated/client";
+import { Type } from 'class-transformer'
 
 export class CreateHoldingDto {
   @IsString()
   @IsNotEmpty()
-  name: name;
+  name: string;
 
   @IsString()
   @IsNotEmpty()
-  cnpj: cnpj;
+  cnpj: string;
 
   @IsString()
   @IsNotEmpty()
@@ -35,9 +34,6 @@ export class CreateHoldingDto {
 
   @IsUUID()
   userId: string;
-  
-  @IsUUID()
-  consultantId: string;
 }
 
 export class UpdateHoldingDto {
@@ -45,6 +41,11 @@ export class UpdateHoldingDto {
   @IsString()
   @IsNotEmpty()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  cnpj: string;
 
   @IsOptional()
   @IsString()
@@ -57,10 +58,11 @@ export class UpdateHoldingDto {
   taxRegime?: string;
 
   @IsOptional()
-  @IsNumber()
-  shareCapital?: number;
+  @Type(() => Date)
+  @IsDate()
+  incorporationDate?: Date;
 
   @IsOptional()
-  @IsUUID()
-  consultantId?: string;
+  @IsNumber()
+  shareCapital?: number;
 }

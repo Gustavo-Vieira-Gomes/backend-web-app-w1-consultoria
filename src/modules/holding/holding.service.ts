@@ -4,9 +4,9 @@ import { CreateHoldingDto, UpdateHoldingDto } from "./dto/holding.dto";
 
 @Injectable()
 export class HoldingService {
-  constructor(private readonly clientService: ClientService) {}
+  constructor(private readonly clientService: ClientService) { }
 
-  async createHolding(payload: CreateHoldingDto) {
+  async createHolding(consultantId: string, payload: CreateHoldingDto) {
     const holdingExists = await this.clientService.holding.findFirst({
       where: {
         name: payload.name,
@@ -26,16 +26,22 @@ export class HoldingService {
         incorporationDate: payload.incorporationDate,
         shareCapital: payload.shareCapital,
 
-        userId: payload.userId,
-        consultantId: payload.consultantId,
+        user: {
+          connect: {
+            id: payload.userId,
+          },
+        },
+        consultant: {
+          connect: {
+            id: consultantId,
+          },
+        },
       },
     });
 
-    /*
     if (!holding) {
       throw new BadRequestException("Failed to create holding");
     }
-    */
 
     return holding;
   }
@@ -48,7 +54,7 @@ export class HoldingService {
     }
 
     const dataToUpdate = Object.fromEntries(
-        Object.entries(payload).filter(([_, v]) => v !== undefined)
+      Object.entries(payload).filter(([_, v]) => v !== undefined)
     );
 
     const updated = await this.clientService.holding.update({
@@ -61,37 +67,35 @@ export class HoldingService {
     return updated;
   }
 
-  async softDeleteHolding(id: string) {
-    const holding = await this.clientService.holding.findUnique({ where: { id } });
+  async getById(id: string) {
+    const holding = await this.clientService.holding.findUnique(
+      {
+        where: {
+          id: id
+        },
+        include: {
+          user: true,
+          consultant: true,
+          heirs: true
+        }
+      });
 
     if (!holding) {
-      throw new NotFoundException("Holding not found");
-    }
-
-    const deleted = await this.clientService.holding.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-    });
-
-    return deleted;
-  }
-
-  async getById(id: string) {
-    const holding = await this.clientService.holding.findUnique({ where: { id } });
-
-    if (!holding || holding.deletedAt) {
       throw new NotFoundException("Holding not found or deleted");
     }
 
     return holding;
   }
 
-  async getAllByUserId(userId: string) {
-      return this.clientService.holding.findMany({
-        where: {
-          userId,
-          deletedAt: null,
-        },
-      });
+  async getAllByConsultantId(userId: string) {
+    return this.clientService.holding.findMany({
+      where: {
+        consultantId: userId,
+      },
+      include: {
+        user: true,
+        heirs: true
+      }
+    });
   }
 }

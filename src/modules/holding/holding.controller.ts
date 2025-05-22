@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Put, Param } from "@nestjs/common";
+import { Body, Controller, Post, Get, Put, Param, Req } from "@nestjs/common";
 import { HoldingService } from "./holding.service";
 import { CreateHoldingDto, UpdateHoldingDto } from "./dto/holding.dto";
 
@@ -7,9 +7,12 @@ export class HoldingController {
     constructor(private readonly holdingService: HoldingService) { }
 
     @Post()
-    create(@Body() payload: CreateHoldingDto) {
-        return this.holdingService.createHolding(payload);
+    create(
+        @Req() req,
+        @Body() payload: CreateHoldingDto) {
+        return this.holdingService.createHolding(req.user.id, payload);
     }
+
 
     @Put(':id')
     async updateHolding(
@@ -23,13 +26,13 @@ export class HoldingController {
     async getById(
         @Param('id') id: string,
     ) {
-        return this.holdingService.getHoldingById(id);
+        return this.holdingService.getById(id);
     }
 
-    @Get('user/:userId')
+    @Get('consultant/:id')
     async getAllByUserId(
-        @Param('userId') userId: string
+        @Param('id') consultantId: string
     ) {
-        return this.holdingService.getAllHoldingsByUser(userId);
+        return this.holdingService.getAllByConsultantId(consultantId);
     }
 }

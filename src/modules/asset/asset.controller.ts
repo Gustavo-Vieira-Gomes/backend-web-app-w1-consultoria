@@ -1,24 +1,27 @@
-import { Body, Controller, Get, Param, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { AssetService } from './asset.service';
 import { AddressDto, AssetDto, updateAssetDto } from './dto/asset.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('asset')
 export class AssetController {
     constructor(private readonly assetService: AssetService) { }
 
     @Post()
+    @UseInterceptors(FileInterceptor('file'))
     async createAsset(
         @Req() req,
         @Body() Body: AssetDto,
-        file?: Express.Multer.File) {
+        @UploadedFile() file?: Express.Multer.File) {
         return this.assetService.createAsset(req.user.id, Body, file)
     }
 
     @Put(':id')
+    @UseInterceptors(FileInterceptor('file'))
     async updateAsset(
         @Param('id') id: string,
         @Body() body: updateAssetDto,
-        file?: Express.Multer.File) {
+        @UploadedFile() file?: Express.Multer.File) {
         return this.assetService.updateAsset(id, body, file)
     }
 

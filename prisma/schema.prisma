@@ -39,32 +39,36 @@ model User {
   liabilities        Liability[]
   assets             Asset[]
   snapshots          MonthlySnapshot[]
+  heirs              Heir[]
   addressId          String?
   address            Address?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 }
 
 model Heir {
-  id             String       @id @default(uuid())
-  name           String
-  relation       HeirRelation
-  gender         Gender?
-  phone          String?
-  percentage     Decimal
-  document       String
-  photoUrl       String?
-  documentType   DocumentType @default(cpf)
-  holdingId      String?
-  holding        Holding?   @relation(fields: [holdingId], references: [id])
-  addressId      String?
-  address        Address?   @relation(fields: [addressId], references: [id])
-  documents      Document[]
-  isForcedHeir   Boolean      @default(true)
-  softDeleted    Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
+  id                   String        @id @default(uuid())
+  name                 String
+  relation             HeirRelation
+  gender               Gender?
+  phone                String?
+  percentage           Decimal
+  document             String
+  documentType         DocumentType  @default(cpf)
+  uploadedDocumentType DocumentType?
+  photoUrl             String?
+  holdingId            String?
+  holding              Holding?      @relation(fields: [holdingId], references: [id])
+  addressId            String?
+  address              Address?      @relation(fields: [addressId], references: [id])
+  documents            Document[]
+  userId               String
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isForcedHeir         Boolean       @default(true)
+  softDeleted          Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  deletedAt            DateTime?
 }
 
 model Document {
@@ -73,7 +77,7 @@ model Document {
   type    DocumentType
 
   userId String?
-  user   User?   @relation(references: [id], fields: [userId])
+  user   User?   @relation(references: [id], fields: [userId], onDelete: Cascade)
 
   heirId String?
   heir   Heir?   @relation(references: [id], fields: [heirId])
@@ -93,7 +97,7 @@ model Liability {
   interestRate Decimal?
   dueDate      DateTime?
   userId       String
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   softDeleted  Boolean       @default(false)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -111,7 +115,7 @@ model Asset {
   address        Address        @relation(references: [id], fields: [addressId])
   documents      Document[]
   userId         String
-  user           User           @relation(fields: [userId], references: [id])
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   isProtected    Boolean        @default(false) // Holding já protege o patrimônio?
   softDeleted    Boolean        @default(false)
   createdAt      DateTime       @default(now())
@@ -131,7 +135,7 @@ model Address {
   country    String  @default("BR")
 
   userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   heirs  Heir[]
   assets Asset[]
 
@@ -150,16 +154,16 @@ model Holding {
   updatedAt         DateTime @updatedAt
 
   userId       String @unique
-  user         User   @relation("Owner", references: [id], fields: [userId])
+  user         User   @relation("Owner", references: [id], fields: [userId], onDelete: Cascade)
   consultantId String
-  consultant   User   @relation("Consultant", references: [id], fields: [consultantId])
+  consultant   User   @relation("Consultant", references: [id], fields: [consultantId], onDelete: SetNull)
   heirs        Heir[]
 }
 
 model MonthlySnapshot {
   id          String   @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   month       DateTime
   totalAssets Decimal
   netWorth    Decimal

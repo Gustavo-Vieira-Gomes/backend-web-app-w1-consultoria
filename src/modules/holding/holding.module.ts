@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientModule } from 'src/client/client.module';
-import { HoldingController } from './heir.controller';
-import { HoldingService } from './heir.service';
+import { HoldingController } from './holding.controller';
+import { HoldingService } from './holding.service';
 
 @Module({
   imports: [ClientModule],

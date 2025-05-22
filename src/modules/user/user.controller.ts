@@ -1,4 +1,8 @@
-import { Body, Controller, Post, Get, Param } from "@nestjs/common";
+import { Body, Controller, Post, Get, Param, Put, Patch, UseInterceptors, UploadedFiles, Req } from "@nestjs/common";
+import { UserService } from "./user.service";
+import { ChangeUserPwdDto, UpdateUserDto } from "./dto/user.dto";
+import { AddressDto } from "../asset/dto/asset.dto";
+import { AnyFilesInterceptor, FilesInterceptor } from "@nestjs/platform-express";
 
 @Controller('user')
 export class UserController {
@@ -12,80 +16,45 @@ export class UserController {
     }
 
     @Put(':id')
+    @UseInterceptors(FilesInterceptor('files'))
     async updateUser(
         @Param('id') id: string,
-        payload: UpdateUserDto
+        @Body() payload: UpdateUserDto,
+        @UploadedFiles() files?: Express.Multer.File[]
     ) {
-        return this.userService.updateUser(id, payload);
+        return this.userService.updateUser(id, payload, files);
     }
     
     @Patch(':id')
-    async softDeleteUser(
+    async deleteUser(
         @Param('id') id: string
     ) {
-        return this.userService.softDeleteUser(id);
+        return this.userService.deleteUser(id);
     }
   
     @Patch('password')
     async changeUserPassword(
-        @Param('id') id: string,
-        @Param('oldPassword') oldPassword: string,
-        @Param('newPassword') newPassword: string,
-        @Param('newPasswordConfirm') newPasswordConfirm: string,
+        @Req() req,
+        @Body() body: ChangeUserPwdDto
     ) {
-      return this.userService.changeUserPassword(id, oldPassword, newPassword, newPasswordConfirm);
-    }
-
-    // verifyUserEmail
-
-
-    @Get(':id')
-    async getUserAssets(
-      @Param('id') id: id
-    ) {
-      return this.userService.getUserAssets(id);
-    }
-
-    @Get(':id')
-    async getUserLiabilities(
-      @Param('id') id: id
-    ) {
-      return this.userService.getUserLiabilities(id);
+      return this.userService.changeUserPassword(req.user.id, body);
     }
 
     @Get(':id')
     async getUserNetWorth(
-      @Param('id') id: id
+      @Param('id') id: string
     ) {
       return this.userService.getUserNetWorth(id);
     }
 
-    @Get(':id')
-    async getUserInflowSummary(
-      @Param('id') id: id
-    ) {
-      return this.userService.getUserInflowSummary(id);
-    }
 
-    @Get(':id')
-    async getUserOutflowSummary(
-      @Param('id') id: id
-    ) {
-      return this.userService.getUserOutflowSummary(id);
-    }
-
-    @Patch('phone')
-    async updateUserNewPhone(
-        @Param('newPhone') newPhone: string,
-    ) {
-      return this.userService.updateUserAdress(newPhone);
-    }
-
-    @Patch('adress')
+    @Patch(':id/address')
     async updateUserAddress(
-        @Param('newAdress') newAdress: adress,
+      @Param('id') id: string,
+      @Body() newAdress: AddressDto
+      //file?: Express.Multer.File
     ) {
-      return this.userService.updateUserAdress(newAdress);
+      //return this.userService.updateUserAdress(newAdress);
     }
 
 }
