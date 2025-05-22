@@ -11,15 +11,19 @@ import { HeirRelation, DocumentType } from "prisma/generated/client";
 
 export class CreateHeirDto {
   @IsString()
+  @IsNotEmpty()
   name: string;
 
   @IsEnum(HeirRelation)
+  @IsNotEmpty()
   relation: HeirRelation;
 
   @IsNumber()
+  @IsNotEmpty()
   percentage: number;
 
   @IsBoolean()
+  @IsNotEmpty()
   is_forced_heir: boolean;
 
   @ValidateNested()
@@ -29,19 +33,18 @@ export class CreateHeirDto {
 
 export class DocumentDto {
   @IsString()
+  @IsNotEmpty()
   phone: string;
 
   @IsString()
+  @IsNotEmpty()
   document: string;
 
   @IsEnum(DocumentType)
+  @IsNotEmpty()
   documentType: DocumentType;
 
   @IsString()
+  @IsNotEmpty()
   address: string;
-
-  // exemplo de campo opcional
-  @IsOptional()
-  @IsString()
-  email?: string;
 }

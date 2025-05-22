@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, Put, Param } from "@nestjs/common";
+import { Body, Controller, Post, Get, Patch, Param } from "@nestjs/common";
 import { HeirService } from "./heir.service";
 import { CreateHeirDto, UpdateHeirDto } from "./dto/heir.dto";
 
@@ -11,7 +11,7 @@ export class HeirController {
         return this.heirService.createHeir(payload);
     }
 
-    @Put(':id')
+    @Patch(':id')
     async updateHeir(
         @Param('id') id: string,
         @Body() payload: UpdateHeirDto
@@ -20,14 +20,14 @@ export class HeirController {
     }
 
     @Get('user/:userId')
-    async getAllHeirsByUser(
+    async findAllByUserId(
         @Param('userId') userId: string
     ) {
         return this.heirService.getAllHeirsByUser(userId);
     }
 
     @Get(':id')
-    async getById(
+    async findOneById(
         @Param('id') id: string,
     ) {
         return this.heirService.getHeirById(id);

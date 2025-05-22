@@ -9,8 +9,7 @@ export class HeirService {
   async createHeir(payload: CreateHeirDto) {
     const heirExists = await this.clientService.heir.findFirst({
       where: {
-        name: payload.name,
-        userId: payload.userId,
+        document: payload.document,
       },
     });
     if (heirExists) {
@@ -20,19 +19,24 @@ export class HeirService {
     const heir = await this.clientService.heir.create({
       data: {
         name: payload.name,
+        gender: payload.gender,
         relation: payload.relation,
         phone: payload.phone,
         document: payload.document,
         documentType: payload.documentType,
         percentage: payload.percentage,
-        address: payload.address,
-        is_forced_heir: payload.is_forced_heir,
+        address: { {create: { ...payload.adress } } };
+        isForcedHeir: payload.isForcedHeir,
         userId: payload.userId,
       },
     });
+
+    /*
     if (!heir) {
       throw new BadRequestException("Failed to create heir");
     }
+    */
+
     return heir;
   }
 
@@ -46,21 +50,24 @@ export class HeirService {
       where: { id },
       data: {
         name: payload.name,
+        gender: payload.gender,
         relation: payload.relation,
         phone: payload.phone,
         document: payload.document,
         documentType: payload.documentType,
         percentage: payload.percentage,
-        address: payload.address,
-        is_forced_heir: payload.is_forced_heir,
+        address: { {connect: { ...payload.adress } } };
+        isForcedHeir: payload.isForcedHeir,
         deletedAt: null,
       },
     });
+
     return updated;
   }
 
   async softDeleteHeir(id: string) {
     const heir = await this.clientService.heir.findUnique({ where: { id } });
+
     if (!heir) {
       throw new NotFoundException("Heir not found");
     }
@@ -72,7 +79,7 @@ export class HeirService {
     return deleted;
   }
 
-  async getAllHeirsByUser(userId: string) {
+  async findAllByUserId(userId: string) {
     return this.clientService.heir.findMany({
       where: {
         userId,
@@ -81,11 +88,13 @@ export class HeirService {
     });
   }
 
-  async getById(id: string) {
+  async findOneById(id: string) {
     const heir = await this.clientService.heir.findUnique({ where: { id } });
+
     if (!heir || heir.deletedAt) {
       throw new NotFoundException("Heir not found or deleted");
     }
+
     return heir;
   }
 }
