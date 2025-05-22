@@ -22,8 +22,10 @@ model User {
   email         String             @unique
   document      String?            @unique
   documentType  DocumentType       @default(cpf)
-  password_hash String
-  birth_date    DateTime?
+  salt          String
+  passwordHash  String
+  birthDate     DateTime?
+  gender        Gender?
   phone         String?
   occupation    String?
   nationality   String?
@@ -39,29 +41,29 @@ model User {
   snapshots          MonthlySnapshot[]
   addressId          String?
   address            Address?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 }
 
 model Heir {
-  id           String       @id @default(uuid())
-  name         String
-  relation     HeirRelation
-  phone        String?
-  percentage   Decimal
-  document     String
-  photoUrl     String?
-  documentType DocumentType @default(cpf)
-
+  id             String       @id @default(uuid())
+  name           String
+  relation       HeirRelation
+  gender         Gender?
+  phone          String?
+  percentage     Decimal
+  document       String
+  photoUrl       String?
+  documentType   DocumentType @default(cpf)
   holdingId      String?
   holding        Holding?   @relation(fields: [holdingId], references: [id])
   addressId      String?
   address        Address?   @relation(fields: [addressId], references: [id])
   documents      Document[]
-  is_forced_heir Boolean    @default(true)
-  softDeleted    Boolean    @default(false)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  isForcedHeir   Boolean      @default(true)
+  softDeleted    Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
   deletedAt      DateTime?
 }
 
@@ -73,8 +75,8 @@ model Document {
   userId String?
   user   User?   @relation(references: [id], fields: [userId])
 
-  heir   Heir?   @relation(references: [id], fields: [heirId])
   heirId String?
+  heir   Heir?   @relation(references: [id], fields: [heirId])
 
   assetId String?
   asset   Asset?  @relation(references: [id], fields: [assetId])
@@ -139,11 +141,11 @@ model Address {
 model Holding {
   id                String   @id @default(uuid())
   name              String
-  cnpj              String
+  cnpj              String   @unique
   legalEntityType   String
   taxRegime         String
-  incorporationDate String
-  shareCapital      String
+  incorporationDate DateTime
+  shareCapital      Decimal
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -224,6 +226,12 @@ enum MaritalStatusEnum {
   divorced
   widowed
   separated
+}
+
+enum Gender {
+  male
+  female
+  notInformed
 }
 
 enum LiquidityLevel {

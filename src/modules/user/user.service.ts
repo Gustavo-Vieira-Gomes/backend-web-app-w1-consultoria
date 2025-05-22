@@ -1,20 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { ClientService } from 'src/client/client.service';
 import { CreateAccountDto } from '../auth/dto/auth.dto';
-import * as bcrypt from 'bcrypt';
+import { validateUser } from '../auth/auth.service.ts';
+import { UpdateUserDto } from './dto/user.dto.ts'
+import { compare, hashSync } from 'bcrypt';
 
 @Injectable()
 export class UserService {
-    constructor(private readonly prisma: ClientService){}
-
-    async findOne(){}
+    constructor(private readonly clientService: ClientService){}
 
     async create(data: CreateAccountDto) {
         return this.prisma.user.create({
             data: {
                 name: data.name,
                 email: data.email,
-                password_hash: data.password
+                passwordHash: data.password
             }
         });
     }
@@ -42,34 +42,24 @@ export class UserService {
 
         if (!user) throw new NotFoundException("User not found");
 
-         const updated = await this.clientService.user.update({
+        const dataToUpdate = Object.fromEntries(
+            Object.entries(payload).filter(([_, v]) => v !== undefined)
+        );
+
+        const updated = await this.clientService.user.update({
           where: { id },
           data: {
-            name: payload.name,
-            relation: payload.relation,
-            percentage: payload.percentage,
-            is_forced_heir: payload.is_forced_heir,
-            phone: payload.phone,
-            document: payload.document,
-            documentType: payload.documentType,
-            adress: payload.adress,
-            userId: payload.userId,
-            deletedAt: null
+            ...dataToUpdate,
           },
         });
 
         return updated;
-        return this.prisma.user.update({
-            data: {
-                // Se é null mantém se não troca
-            }
-        });
     }
     
     async softDeleteUser(id: string) {
         return this.prisma.user.update({
             data: {
-                deletedAt: now();
+                deletedAt: new Date();
             }
         });
     }
@@ -80,52 +70,55 @@ export class UserService {
         newPassword: string,
         newPasswordConfirm: string,
     ) {
-        if 
-      return this.prisma.user.update({
-          data: {
-              deletedAt: now();
-          }
-      });
+        const user = await this.clientService.user.findUnique({
+          where: { id },
+        });
+
+        if (user && (await compare(oldPassword + user.salt, user.passwordHash)) && newPassword == newPasswordConfirm) {
+            const passwordHash = hashSync(newPassword + user.salt, 10);
+            
+            if (passwordHash) {
+                return this.prisma.user.update({
+                    data: {
+                        passwordHash: passwordHash
+                    }
+                });
+            }
+        }
     }
-
-    // resetUserPassword
-
 
     // verifyUserEmail
 
 
-    async getUserAssets(
-    ) {
-      return this.userService.getUserAssets(id);
+    async getUserAssets(id: string) {
+        return this.clientService.asset.findMany({
+            where: {
+                userId: id,
+                softDelete: false,
+            }
+        })
     }
 
-    async getUserLiabilities(
-    ) {
-      return this.userService.getUserLiabilities(id);
+    async getUserLiabilities(id: string) {
+        return this.clientService.liabilities.findMany({
+            where: {
+                userId: id,
+                softDelete: false,
+            }
+        })
     }
 
-    async getUserNetWorth(
-    ) {
-      return this.userService.getUserNetWorth(id);
-    }
+    async getUserNetWorth(id: string) {
+        const assets = await this.getUserAssets(id);
+        const liabilities = await this.getUserLiabilities(id);
 
-    async getUserInflowSummary(
-    ) {
-      return this.userService.getUserInflowSummary(id);
-    }
+        const totalAssets = assets.reduce((acc, a) => acc + a.currentValue.toNumber(), 0);
+        const totalLiabilities = liabilities.reduce((acc, l) => acc + l.currentValue.toNumber(), 0);
 
-    async getUserOutflowSummary(
-    ) {
-      return this.userService.getUserOutflowSummary(id);
-    }
-
-    async updateUserNewPhone(
-    ) {
-      return this.userService.updateUserAdress(newPhone);
-    }
-
-    async updateUserAddress(
-    ) {
-      return this.userService.updateUserAdress(newAdress);
+        return {
+            netWorth: totalAssets - totalLiabilities,
+            totalAssets,
+            totalLiabilities,
+        }
     }
 }

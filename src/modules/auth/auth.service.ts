@@ -1,6 +1,7 @@
 import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt'; // Importar só o necessário
+import { compare, hashSync } from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { UserService } from '../user/user.service';
 import { userToReturnMapper } from 'src/utils/mappers/user-to-return.mapper';
 import { ClientService } from 'src/client/client.service';
@@ -26,16 +27,18 @@ export class AuthService {
     const account = await this.prisma.user.findUnique({
       where: { email: email },
     });
-    if (account && (await bcrypt.compare(password + account.id, account.password_hash))) {
+    if (account && (await compare(password + account.salt, account.password_hash))) {
       return userToReturnMapper(account);
     }
     return;
   }
 
   async register(payload: CreateAccountDto) {
+    const salt = randomBytes(16).toString('hex');
     const account = {
         ...payload,
-        password: bcrypt.hashSync(payload.password + payload.id, 10),
+        salt: salt,
+        password_hash: hashSync(payload.password + salt, 10),
     };
 
     const emailExists = await this.prisma.user.findUnique({

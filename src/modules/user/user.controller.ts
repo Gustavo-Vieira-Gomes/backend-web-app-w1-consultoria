@@ -33,14 +33,8 @@ export class UserController {
         @Param('newPassword') newPassword: string,
         @Param('newPasswordConfirm') newPasswordConfirm: string,
     ) {
-        if (logado && ()) // Fetchar o user
-    if (account && (await bcrypt.compare(password + account.id, account.password_hash))) {
       return this.userService.changeUserPassword(id, oldPassword, newPassword, newPasswordConfirm);
-        password: bcrypt.hashSync(payload.password + payload.id, 10),
     }
-
-    // resetUserPassword
-
 
     // verifyUserEmail
 
